@@ -549,8 +549,14 @@
       c.setTransform(dpr, 0, 0, dpr, 0, 0);
       const R = 62, Z = 2.2, sep = 46;                       // radio, aumento y separación del dedo (px de pantalla)
       const fx = rect.left + this.lupa.px * rect.width / ANCHO, fy = rect.top + this.lupa.py * rect.height / ALTO;
-      const lx = Math.max(R + 4, Math.min(W - R - 4, fx));
-      const ly = Math.max(R + 4, fy - R - sep);              // siempre arriba; solo se pega al borde si no cabe
+      // Siempre por encima del dedo. Si arriba no cabe (tablero pegado al borde de la pantalla), a un lado del dedo,
+      // donde haya más hueco, y a la altura del dedo o algo por encima: nunca por debajo de la yema.
+      let lx = Math.max(R + 4, Math.min(W - R - 4, fx)), ly = fy - R - sep;
+      if (ly < R + 4) {
+        ly = Math.max(R + 4, fy - R * 0.6);
+        lx = fx > W / 2 ? fx - R - sep : fx + R + sep;
+        lx = Math.max(R + 4, Math.min(W - R - 4, lx));
+      }
       const k = l.width / rect.width, r = R / Z;             // de pantalla a píxeles del lienzo
       c.save();
       c.beginPath(); c.arc(lx, ly, R, 0, Math.PI * 2);
