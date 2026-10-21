@@ -319,6 +319,8 @@
   }
 
   // ---------- cifrado de soluciones (REGLAS §8): protección contra curiosos ----------
+  // Clave del cifrado de soluciones (protección contra curiosos, REGLAS §8): la usan el juego, el editor y preparar_web.js.
+  const CLAVE = 'cromatron·soluciones·2026';
   function flujo(clave, n) {
     let h = 2166136261;
     for (const ch of clave) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619) >>> 0; }
@@ -493,6 +495,6 @@
     ANCHO, ALTO, TAB, CAJA, PISTAS, MENSAJE, posNumero, C, RGB, TEXTOS,
     dibujarCuadroPista, pulsarCuadroPista, pintarFondo, marco, dibujarCabecera,
     centro, centroHueco, dibujarPieza, dibujarPared, dibujarRayos, texto, textoEnCaja, numeroTira,
-    nivelesAbiertos, codigoSolucion, leerCodigo, cifrar, descifrar, Partida,
+    nivelesAbiertos, codigoSolucion, leerCodigo, cifrar, descifrar, CLAVE, Partida,
   };
 })();

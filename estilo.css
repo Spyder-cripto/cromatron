@@ -31,3 +31,10 @@ h1 { font-size: 26px; margin: 0 0 10px; letter-spacing: 1px; text-shadow: 0 1px 
 }
 .nota { font-size: 13px; margin: 10px 2px; line-height: 1.45; }
 a { color: var(--enlace); }
+.botones { display: flex; justify-content: center; gap: 14px; margin: 12px 0 2px; }
+.botones button { font: inherit; font-weight: 800; font-size: 16px; padding: 10px 22px; border-radius: 26px; cursor: pointer;
+  border: 2px solid #3b2a6b; color: #3b2a6b; background: #ffffff; box-shadow: 0 4px 0 #3b2a6b; }
+.botones button:active { transform: translateY(3px); box-shadow: 0 1px 0 #3b2a6b; }
+#reiniciar { background: #d6ecff; }
+#solucion { background: #ffe3f0; }
+#solucion.aviso { background: #d33a2c; color: #fff; border-color: #a12a1f; box-shadow: 0 4px 0 #a12a1f; }

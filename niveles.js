@@ -61,7 +61,8 @@ globalThis.CROMATRON_NIVELES = {
      3,
      0
     ]
-   ]
+   ],
+   "sol": "XfwgGjtCIn2B3vPU-2fP-3LSaaq4CDgCAIjf_644CVJy999Q_g8"
   }
  ]
 };

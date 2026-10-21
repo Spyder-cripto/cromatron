@@ -23,6 +23,7 @@
     const Mo = globalThis.CromatronMotor;
     return lista.slice(0, 50).map((nv) => ({
       nombre: nv.nombre || '', pista: nv.pista || '',
+      sol: K.cifrar(nv.piezas.filter((f) => Mo.MOVILES.has(f[0])).map((f) => f.slice(0, 5)), K.CLAVE),
       fijas: nv.piezas.filter((f) => !Mo.MOVILES.has(f[0])),
       caja: nv.piezas.filter((f) => Mo.MOVILES.has(f[0])).map((f) => [f[0], f[0] === Mo.T.FILTRO ? f[2] : 0]),
     }));
@@ -47,7 +48,8 @@
   const partida = new K.Partida(lienzo, {
     alCambiar: (p) => {
       estado.tableros[estado.actual] = p.colocacion();
-      if (p.ganado && !estado.hechos.includes(estado.actual)) estado.hechos.push(estado.actual);
+      // Un nivel resuelto con el botón «Solución» no cuenta como superado.
+      if (p.ganado && !p.conSolucion && !estado.hechos.includes(estado.actual)) estado.hechos.push(estado.actual);
       guardar(); p.dibujar();
     },
     alPulsarFuera: (px, py) => {
@@ -77,8 +79,39 @@
   function ir(i) {
     if (!niveles.length) return;
     estado.actual = Math.max(0, Math.min(niveles.length - 1, i));
-    guardar();
+    guardar(); partida.conSolucion = false;
     partida.cargar(niveles[estado.actual], estado.actual + 1, estado.tableros[estado.actual]);
+  }
+
+  // Botones «Reiniciar» y «Solución» (decisión de Fali, para el móvil y el ordenador).
+  const bReiniciar = document.getElementById('reiniciar'), bSolucion = document.getElementById('solucion');
+  if (bReiniciar) bReiniciar.onclick = () => { partida.conSolucion = false; partida.reiniciar(); };
+  if (bSolucion) {
+    let aviso = 0;
+    bSolucion.onclick = () => {
+      const nv = partida.nivel; if (!nv || !nv.sol) return;
+      if (!aviso) {
+        bSolucion.textContent = '¿Ver la solución? Pulsa otra vez'; bSolucion.classList.add('aviso');
+        aviso = setTimeout(() => { aviso = 0; bSolucion.textContent = 'Solución'; bSolucion.classList.remove('aviso'); }, 4000);
+        return;
+      }
+      clearTimeout(aviso); aviso = 0; bSolucion.textContent = 'Solución'; bSolucion.classList.remove('aviso');
+      mostrarSolucion(nv);
+    };
+  }
+  function mostrarSolucion(nv) {
+    let sol;
+    try { sol = K.descifrar(nv.sol, K.CLAVE); } catch (e) { return; }
+    // Cada pieza de la caja va a la casilla de una pieza igual (tipo y, en los filtros, color) de la solución.
+    const libres = sol.map((f) => ({ f, usada: false }));
+    for (const m of partida.moviles) {
+      const s = libres.find((x) => !x.usada && x.f[0] === m.tipo && (m.tipo !== globalThis.CromatronMotor.T.FILTRO || x.f[2] === m.color));
+      if (!s) continue;
+      s.usada = true;
+      Object.assign(m, { enCaja: false, x: s.f[3], y: s.f[4], p: s.f[1] }); delete m.hueco;
+    }
+    partida.conSolucion = true;
+    partida.recalcular(); partida.cambio();
   }
 
   // Teclado (REGLAS §5.3)
@@ -90,7 +123,7 @@
     } else if (e.key === '-') {
       if (estado.actual > 0) ir(estado.actual - 1);         // como el original: sin mirar si está abierto
     } else if (e.key === 'r') {
-      partida.reiniciar();
+      partida.conSolucion = false; partida.reiniciar();
     }
   });
   document.addEventListener('copy', (e) => { if (!partida.nivel) return; e.clipboardData.setData('text/plain', partida.copiar()); e.preventDefault(); });
