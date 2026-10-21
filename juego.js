@@ -58,7 +58,7 @@
         const { x, y } = K.posNumero(n);
         if (px >= x - 2 && px < x + 19 && py >= y - 2 && py < y + 17) { if (abiertos().has(n - 1)) ir(n - 1); return; }
       }
-      if (py > 462 && px < 140) location.href = 'como-se-juega.html';
+      if (py > 455 && px > 440) location.href = 'como-se-juega.html';
     },
     alDibujar: (ctx, p) => {
       const h = hechos(), ab = abiertos();
@@ -70,9 +70,10 @@
       if (!niveles.length) K.textoEnCaja(ctx, vista ? 'Todavía no has guardado niveles en el editor de este navegador.' : 'Todavía no hay niveles.', P.x0, P.y0, P.x1, 12, K.C.texto);
       else K.dibujarCuadroPista(ctx, p);
       K.dibujarCabecera(ctx, p, h.has(estado.actual));
-      K.texto(ctx, 'Cómo se juega', 6, 466, 12, '#1f5fbf');
-      ctx.fillStyle = '#1f5fbf'; ctx.fillRect(6, 479, 96, 1);
-      K.texto(ctx, suelto ? 'Cromatron · nivel compartido' : vista ? 'Vista previa con tus niveles' : 'Cromatron', 634, 466, 12, vista ? '#b0412f' : K.C.texto, 'right');
+      // «Cómo se juega», abajo a la derecha y con la letra del nombre del nivel (Fali).
+      K.texto(ctx, 'Cómo se juega', 634, 459, 22, '#1f5fbf', 'right');
+      ctx.fillStyle = '#1f5fbf'; ctx.fillRect(634 - ctx.measureText('Cómo se juega').width, 479, ctx.measureText('Cómo se juega').width, 1.5);
+      if (suelto || vista) K.texto(ctx, suelto ? 'Nivel compartido' : 'Vista previa con tus niveles', 634, 3, 11, '#b0412f', 'right');
     },
   });
 

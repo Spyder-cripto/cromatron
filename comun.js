@@ -12,7 +12,7 @@
   const PISTAS = { x0: 450, y0: 125, x1: 620, y1: 475 };
   const MENSAJE = { x0: 330, y0: 385, x1: 400, y1: 420 };
   // La tira va 14 px más abajo que en el original para dejar sitio al nombre del nivel (Fali).
-  const posNumero = (n) => ({ x: 10 + 20 * ((n - 1) % 25), y: 435 + 16 * Math.floor((n - 1) / 25) });
+  const posNumero = (n) => ({ x: 10 + 20 * ((n - 1) % 25), y: 433 + 14 * Math.floor((n - 1) / 25) });
   const DX = [0, 1, 1, 1, 0, -1, -1, -1], DY = [-1, -1, 0, 1, 1, 1, 0, -1];
 
   // ---------- estilo Jardín ----------
@@ -247,14 +247,14 @@
   }
 
   // ---------- cuadro de pistas con botón «Pista» (decisión de Fali) ----------
-  const BOTON_PISTA = { x: 489, y: 198, w: 92, h: 22 };   // centrado en el cuadro de pistas (Fali)
+  const BOTON_PISTA = { x: 460, y: 192, w: 150, h: 34 };  // centrado en el cuadro de pistas, letra como el nombre (Fali)
   function dibujarCuadroPista(ctx, p) {
     const P = PISTAS, B = BOTON_PISTA;
     if (p.ganado) return textoEnCaja(ctx, TEXTOS.seguir, P.x0, BOTON_PISTA.y, P.x1, 12, C.texto);
     if (!p.nivel || !p.nivel.pista) return;
     ctx.fillStyle = p.verPista ? '#ffffff' : '#ffd23f'; ctx.strokeStyle = '#2b2140'; ctx.lineWidth = 1.5;
     ctx.beginPath(); ctx.roundRect(B.x, B.y, B.w, B.h, 6); ctx.fill(); ctx.stroke();
-    texto(ctx, p.verPista ? 'Ocultar pista' : 'Pista', B.x + B.w / 2, B.y + 5, 11, '#2b2140', 'center');
+    texto(ctx, p.verPista ? 'Ocultar' : 'Pista', B.x + B.w / 2, B.y + 5, 22, '#2b2140', 'center');
     if (p.verPista) textoEnCaja(ctx, p.nivel.pista, P.x0, B.y + B.h + 10, P.x1, 12, C.texto);
   }
   // Nombre del nivel y «¡Logrado!» / «(ganado)», a la derecha, entre la caja y la pista (el marco grueso ocupa su sitio
