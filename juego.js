@@ -60,9 +60,9 @@
       if (K.pulsarCuadroPista(partida, px, py)) return;
       for (let n = 1; n <= niveles.length; n++) {
         const { x, y } = K.posNumero(n);
-        if (px >= x - 2 && px < x + 19 && py >= y - 2 && py < y + 17) { if (abiertos().has(n - 1)) ir(n - 1); return; }
+        if (px >= x && px < x + 36 && py >= y - 3 && py < y + 26) { if (abiertos().has(n - 1)) ir(n - 1); return; }
       }
-      if (py > 455 && px > 440) location.href = 'como-se-juega.html';
+      if (py > 525 && px > 440) location.href = 'como-se-juega.html';
     },
     alDibujar: (ctx, p) => {
       const h = hechos(), ab = abiertos();
@@ -75,8 +75,8 @@
       else K.dibujarCuadroPista(ctx, p);
       K.dibujarCabecera(ctx, p, h.has(estado.actual));
       // «Cómo se juega», abajo a la derecha y con la letra del nombre del nivel (Fali).
-      K.texto(ctx, 'Cómo se juega', 634, 459, 22, '#1f5fbf', 'right');
-      ctx.fillStyle = '#1f5fbf'; ctx.fillRect(634 - ctx.measureText('Cómo se juega').width, 479, ctx.measureText('Cómo se juega').width, 1.5);
+      K.texto(ctx, 'Cómo se juega', 634, 530, 22, '#1f5fbf', 'right');
+      ctx.fillStyle = '#1f5fbf'; ctx.fillRect(634 - ctx.measureText('Cómo se juega').width, 555, ctx.measureText('Cómo se juega').width, 1.5);
       if (suelto || vista) K.texto(ctx, suelto ? 'Nivel compartido' : 'Vista previa con tus niveles', 634, 3, 11, '#b0412f', 'right');
     },
   });

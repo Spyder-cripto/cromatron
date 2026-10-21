@@ -6,13 +6,15 @@
   const { T, N } = M;
 
   // ---------- medidas del original (ventana de 640 × 480) ----------
-  const ANCHO = 640, ALTO = 480;
+  // 640 de ancho como el original; más alto por abajo para la tira de niveles con letra grande (Fali).
+  const ANCHO = 640, ALTO = 560;
   const TAB = { x: 60, y: 30, c: 24 };               // tablero 15 × 15
   const CAJA = { x: 460, y: 20, c: 26, cols: 6, filas: 4 };
   const PISTAS = { x0: 450, y0: 125, x1: 620, y1: 475 };
   const MENSAJE = { x0: 330, y0: 385, x1: 400, y1: 420 };
   // La tira va 14 px más abajo que en el original para dejar sitio al nombre del nivel (Fali).
-  const posNumero = (n) => ({ x: 10 + 20 * ((n - 1) % 25), y: 433 + 14 * Math.floor((n - 1) / 25) });
+  const POR_FILA = 17;   // con la letra del nombre del nivel caben 17 por fila, en huecos de 36 px (Fali)
+  const posNumero = (n) => ({ x: 14 + 36 * ((n - 1) % POR_FILA), y: 436 + 28 * Math.floor((n - 1) / POR_FILA) });
   const DX = [0, 1, 1, 1, 0, -1, -1, -1], DY = [-1, -1, 0, 1, 1, 1, 0, -1];
 
   // ---------- estilo Jardín ----------
@@ -241,9 +243,9 @@
   function numeroTira(ctx, n, estado) {
     const { x, y } = posNumero(n);
     const col = { actual: '#ffffff', hecho: '#2a5bd7', abierto: '#2e9b3a', cerrado: '#d33a2c' }[estado];
-    ctx.font = 'bold 12px Verdana, Tahoma, sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
-    ctx.lineWidth = 3; ctx.strokeStyle = '#1d2a1b'; ctx.lineJoin = 'round'; ctx.strokeText(String(n), x, y);
-    ctx.fillStyle = col; ctx.fillText(String(n), x, y);
+    ctx.font = 'bold 22px Verdana, Tahoma, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.lineWidth = 4; ctx.strokeStyle = '#1d2a1b'; ctx.lineJoin = 'round'; ctx.strokeText(String(n), x + 18, y);
+    ctx.fillStyle = col; ctx.fillText(String(n), x + 18, y);
   }
 
   // ---------- cuadro de pistas con botón «Pista» (decisión de Fali) ----------
