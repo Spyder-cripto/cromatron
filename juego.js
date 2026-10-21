@@ -77,7 +77,7 @@
       // «Cómo se juega», abajo a la derecha y con la letra del nombre del nivel (Fali).
       K.texto(ctx, 'Cómo se juega', 634, 530, 22, '#1f5fbf', 'right');
       ctx.fillStyle = '#1f5fbf'; ctx.fillRect(634 - ctx.measureText('Cómo se juega').width, 555, ctx.measureText('Cómo se juega').width, 1.5);
-      if (suelto || vista) K.texto(ctx, suelto ? 'Nivel compartido' : 'Vista previa con tus niveles', 634, 3, 11, '#b0412f', 'right');
+      if (suelto || vista) K.texto(ctx, suelto ? 'Nivel compartido' : 'Vista previa con tus niveles', 60, 3, 11, '#b0412f', 'left');
     },
   });
 

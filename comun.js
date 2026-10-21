@@ -385,7 +385,7 @@
       l.addEventListener('pointerdown', (e) => this.bajar(e));
       l.addEventListener('pointermove', (e) => this.mover(e));
       l.addEventListener('pointerup', (e) => this.subir(e));
-      l.addEventListener('pointercancel', () => { this.arrastre = null; this.dibujar(); });
+      l.addEventListener('pointercancel', () => { this.arrastre = null; this.lupa = null; this.dibujar(); });
     }
     punto(e) {
       const r = this.lienzo.getBoundingClientRect();
@@ -437,20 +437,25 @@
       const h = this.queHay(px, py);
       const m = this.movilEn(h);
       if (!m) { if (h && h.donde === 'fuera' && e.button === 0) this.op.alPulsarFuera(px, py); return; }
-      this.lienzo.setPointerCapture(e.pointerId);
-      this.arrastre = { m, x0: px, y0: py, px, py, boton: e.button, movido: false };
+      try { this.lienzo.setPointerCapture(e.pointerId); } catch (err) { /* sin captura: sigue funcionando */ }
+      const tactil = e.pointerType === 'touch' || e.pointerType === 'pen';
+      this.arrastre = { m, x0: px, y0: py, px, py, boton: e.button, movido: false, tactil };
+      // Con el dedo, lupa encima del dedo para ver lo que tapa (Fali).
+      if (tactil) { this.lupa = { px, py }; this.dibujar(); }
     }
     mover(e) {
       if (!this.arrastre) return;
       const [px, py] = this.punto(e);
       const a = this.arrastre;
       a.px = px; a.py = py;
-      if (!a.movido && Math.hypot(px - a.x0, py - a.y0) > 2) { a.movido = true; this.recalcular(); }
-      if (a.movido) this.dibujar();
+      if (this.lupa) { this.lupa.px = px; this.lupa.py = py; }
+      // Con el dedo hace falta moverse algo más para que cuente como arrastre (un toque siempre tiembla un poco).
+      if (!a.movido && Math.hypot(px - a.x0, py - a.y0) > (a.tactil ? 8 : 2)) { a.movido = true; this.recalcular(); }
+      if (a.movido || this.lupa) this.dibujar();
     }
     subir(e) {
       const a = this.arrastre; if (!a) return;
-      this.arrastre = null;
+      this.arrastre = null; this.lupa = null;
       if (!a.movido) {
         a.m.p = (a.m.p + (a.boton === 2 ? 1 : 7)) % 8;     // izquierdo: −45°; derecho: +45°
         this.recalcular(); this.cambio(); return;
@@ -498,8 +503,60 @@
         ctx.fillStyle = C.caja; ctx.fillRect(cx - 12, cy - 12, 24, 24);
       }
       for (const m of this.moviles) if (m.enCaja && (!a || a.m !== m)) dibujarPieza(ctx, m, ...centroHueco(m.hueco), 24);
-      if (a) dibujarPieza(ctx, a.m, a.px, a.py, TAB.c);
+      if (a) {
+        // La pieza arrastrada se ve ya encajada en la casilla (o hueco) donde caería; si no cae en ninguno, bajo el dedo.
+        const d = this.marcarDestino(ctx, a.px, a.py);
+        if (d) dibujarPieza(ctx, a.m, d.x, d.y, d.lado === TAB.c ? TAB.c : 24); else dibujarPieza(ctx, a.m, a.px, a.py, TAB.c);
+      }
       if (this.op.alDibujar) this.op.alDibujar(ctx, this);
+      if (this.lupa) this.dibujarLupa(ctx);
+    }
+    // Al arrastrar: la casilla (o el hueco de la caja) donde caería la pieza, en verde si cabe y en rojo si no.
+    marcarDestino(ctx, px, py) {
+      const h = this.queHay(px, py);
+      let x, y, lado, libre;
+      if (h && h.donde === 'tablero') {
+        [x, y] = centro(h.x, h.y); lado = TAB.c;
+        libre = !this.piezaEn(h.x, h.y) || (this.arrastre && !this.arrastre.m.enCaja && this.arrastre.m.x === h.x && this.arrastre.m.y === h.y);
+      } else if (h && h.donde === 'caja') {
+        [x, y] = centroHueco(h.hueco); lado = CAJA.c - 2;   // (hueco de la caja)
+        libre = !this.moviles.some((m) => m.enCaja && m.hueco === h.hueco && m !== this.arrastre.m);
+      } else return;
+      ctx.save();
+      ctx.fillStyle = libre ? 'rgba(46,204,113,0.28)' : 'rgba(211,58,44,0.25)';
+      ctx.fillRect(x - lado / 2, y - lado / 2, lado, lado);
+      ctx.lineWidth = 2; ctx.strokeStyle = libre ? '#1e9e57' : '#d33a2c';
+      ctx.strokeRect(x - lado / 2 + 1, y - lado / 2 + 1, lado - 2, lado - 2);
+      ctx.restore();
+      return libre ? { x, y, lado } : null;
+    }
+    // Lupa: círculo con lo que hay bajo el dedo, aumentado, por encima del dedo (o por debajo, cerca del borde de arriba).
+    dibujarLupa(ctx) {
+      // En pantallas pequeñas la lupa crece, para que se vea bien con el dedo encima (unos 60 px de pantalla de radio).
+      const enPantalla = (this.lienzo.clientWidth || ANCHO) / ANCHO;
+      const R = Math.max(54, Math.min(110, 60 / enPantalla)), Z = 2.2, { px, py } = this.lupa;
+      const l = this.lienzo;
+      const copia = this.copia || (this.copia = document.createElement('canvas'));
+      copia.width = l.width; copia.height = l.height;
+      copia.getContext('2d').drawImage(l, 0, 0);
+      const lx = Math.max(R + 4, Math.min(ANCHO - R - 4, px));
+      let ly = py - R - 30; if (ly - R < 2) ly = py + R + 30;
+      const r = R / Z, k = this.escala;
+      ctx.save();
+      ctx.beginPath(); ctx.arc(lx, ly, R, 0, Math.PI * 2);
+      ctx.shadowColor = 'rgba(40,20,70,0.35)'; ctx.shadowBlur = 10; ctx.shadowOffsetY = 3;
+      ctx.fillStyle = C.cesped; ctx.fill();
+      ctx.restore();
+      ctx.save();
+      ctx.beginPath(); ctx.arc(lx, ly, R, 0, Math.PI * 2); ctx.clip();
+      ctx.drawImage(copia, (px - r) * k, (py - r) * k, 2 * r * k, 2 * r * k, lx - R, ly - R, 2 * R, 2 * R);
+      ctx.strokeStyle = 'rgba(59,42,107,0.55)'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(lx - 7, ly); ctx.lineTo(lx + 7, ly); ctx.moveTo(lx, ly - 7); ctx.lineTo(lx, ly + 7); ctx.stroke();
+      ctx.restore();
+      const g = ctx.createLinearGradient(lx - R, ly - R, lx + R, ly + R);
+      ['#ff3b3b', '#ff9f1c', '#f5c400', '#2ecc71', '#22b8d6', '#3b82f6', '#8b5cf6', '#ec4899'].forEach((c, i) => g.addColorStop(i / 7, c));
+      ctx.beginPath(); ctx.arc(lx, ly, R, 0, Math.PI * 2); ctx.lineWidth = 5; ctx.strokeStyle = g; ctx.stroke();
+      ctx.beginPath(); ctx.arc(lx, ly, R + 3, 0, Math.PI * 2); ctx.lineWidth = 1.2; ctx.strokeStyle = '#3b2a6b'; ctx.stroke();
     }
   }
 
