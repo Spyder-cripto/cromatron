@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cromatron · Cómo se juega</title>
+  <link rel="stylesheet" href="estilo.css">
+  <style>
+    .pieza { display: flex; gap: 14px; align-items: center; padding: 10px 0; border-bottom: 1px solid #e4d9f7; }
+    .pieza canvas { flex: none; width: 72px; height: 72px; border: 1px solid var(--borde); border-radius: 6px; background: #f1f8e8; }
+    .pieza h3 { margin: 0 0 3px; font-size: 15px; }
+    .pieza p { margin: 0; font-size: 13px; line-height: 1.45; }
+    h2 { font-size: 17px; margin: 20px 0 6px; }
+    .marco p, .marco li { font-size: 14px; line-height: 1.5; }
+  </style>
+</head>
+<body>
+  <div class="marco">
+    <h1>Cómo se juega</h1>
+    <p><a href="index.html">← Volver al juego</a></p>
+    <h2>El objetivo</h2>
+    <p>Los láseres disparan rayos de colores. Coloca las piezas de la caja en el tablero para que <b>cada estrella reciba exactamente
+      su color</b>, ni más ni menos. Cuando todas lo consiguen, has ganado.</p>
+    <ul>
+      <li>Los colores se suman: rojo + verde = amarillo; rojo + azul = magenta; verde + azul = cian; los tres = blanco.</li>
+      <li>Una estrella roja que recibe luz blanca <b>no</b> se enciende: le llega de más.</li>
+      <li>Los rayos se atraviesan sin molestarse y las estrellas dejan pasar la luz.</li>
+    </ul>
+    <h2>Los controles</h2>
+    <ul>
+      <li><b>Arrastra</b> una pieza de la caja al tablero (o de vuelta a la caja). Solo cabe en una casilla vacía.</li>
+      <li><b>Clic</b> en una pieza para girarla 45°: botón izquierdo hacia la izquierda, derecho hacia la derecha.</li>
+      <li><b>Barra espaciadora</b>: siguiente nivel · <b>-</b>: nivel anterior · <b>r</b>: reiniciar el nivel.</li>
+      <li><b>Ctrl+C / Ctrl+V</b>: copiar y pegar tu solución como texto.</li>
+      <li>En la tira de abajo: <b>blanco</b> = nivel actual, <b>azul</b> = resuelto, <b>verde</b> = disponible, <b>rojo</b> = todavía cerrado.</li>
+    </ul>
+    <h2>Las piezas</h2>
+    <div id="piezas"></div>
+    <p><a href="index.html">← Volver al juego</a></p>
+  </div>
+  <script src="motor.js"></script>
+  <script src="comun.js"></script>
+  <script>
+    (function () {
+      const K = Cromatron, T = CromatronMotor.T;
+      const FICHAS = [
+        [{ tipo: T.LASER, p: 2, color: 4 }, 'Láser', 'Dispara un rayo de su color. No se mueve. Si un rayo le llega de vuelta, lo absorbe.'],
+        [{ tipo: T.ESTRELLA, color: 6 }, 'Estrella', 'Tiene que recibir exactamente su color. Deja pasar la luz. Se ilumina cuando está bien.', 6],
+        [{ tipo: T.ESTRELLA, color: 0 }, 'Estrella negra', 'No le puede llegar ninguna luz, de ningún color, ni siquiera de paso.', 0],
+        [{ tipo: T.PARED }, 'Muro', 'Pared de ladrillo: corta el rayo. No se mueve.'],
+        [{ tipo: T.ESPEJO, p: 1 }, 'Espejo', 'Refleja por su cara brillante: gira el rayo 90°, o lo devuelve si le llega de frente. Por detrás o de canto, lo corta.'],
+        [{ tipo: T.BENDER, p: 1 }, 'Bender', 'Espejo inclinado: gira el rayo 45° o 135°, de recto a diagonal y al revés. Por detrás, lo corta.'],
+        [{ tipo: T.DIVISOR, p: 1 }, 'Divisor', 'Cristal de dos caras. Si el rayo le llega en diagonal, sigue recto y además sale reflejado. De frente, pasa recto. De canto, lo corta. También junta dos rayos en uno.'],
+        [{ tipo: T.FILTRO, p: 0, color: 4 }, 'Filtro', 'Deja pasar solo su color (rojo, verde o azul), y solo si el rayo lo cruza de frente.'],
+        [{ tipo: T.PRISMA, p: 0 }, 'Prisma', 'Separa la luz: el rojo, el verde y el azul salen por caminos distintos. Al revés, también los junta en blanco.'],
+        [{ tipo: T.DOPPLER, p: 0 }, 'Doppler', 'Cambia el color del rayo que lo cruza a lo largo: en el sentido de la flecha, rojo → verde → azul → rojo; al revés, rojo → azul → verde → rojo.'],
+        [{ tipo: T.ENTRELAZADOR, p: 0 }, 'Entrelazador', 'Parte el rayo en dos rayos gemelos que salen a los lados, uno por cada color. Si un gemelo cambia de color en un doppler, el otro cambia a la vez, al contrario. Un divisor en diagonal u otro entrelazador rompen el lazo.'],
+        [{ tipo: T.CONDUCTO, p: 0 }, 'Conducto', 'Tubo fijo: solo deja pasar la luz a lo largo.'],
+        [{ tipo: T.TELE }, 'Teletransportador', 'El rayo que entra salta al siguiente teletransportador que haya en su misma línea, aunque haya muros en medio, y sigue en la misma dirección. Si no hay ninguno, desaparece.'],
+      ];
+      const caja = document.getElementById('piezas');
+      for (const [pz, titulo, txt, luz] of FICHAS) {
+        const d = document.createElement('div'); d.className = 'pieza';
+        const c = document.createElement('canvas'); const r = window.devicePixelRatio || 1; c.width = 72 * r; c.height = 72 * r;
+        const ctx = c.getContext('2d'); ctx.scale(r, r);
+        K.dibujarPieza(ctx, { p: 0, color: 0, ...pz }, 36, 36, 60, luz);
+        d.appendChild(c);
+        const t = document.createElement('div'); t.innerHTML = `<h3>${titulo}</h3><p>${txt}</p>`; d.appendChild(t);
+        caja.appendChild(d);
+      }
+    })();
+  </script>
+</body>
+</html>
