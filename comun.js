@@ -7,14 +7,16 @@
 
   // ---------- medidas del original (ventana de 640 × 480) ----------
   // 640 de ancho como el original; más alto por abajo para la tira de niveles con letra grande (Fali).
-  const ANCHO = 640, ALTO = 560;
-  const TAB = { x: 60, y: 30, c: 24 };               // tablero 15 × 15
-  const CAJA = { x: 460, y: 20, c: 26, cols: 6, filas: 4 };
-  const PISTAS = { x0: 450, y0: 125, x1: 620, y1: 475 };
+  const ANCHO = 640, ALTO = 985;
+  // Disposición de Cromatron (Fali, 22-oct): el tablero ocupa todo el ancho del recuadro; debajo, el nombre del nivel,
+  // la tira de niveles y, al final, la caja de herramientas con la pista a su derecha.
+  const TAB = { x: 20, y: 20, c: 40 };               // tablero 15 × 15 (600 × 600)
+  const CAJA = { x: 24, y: 778, c: 40, cols: 6, filas: 4 };
+  const PISTAS = { x0: 290, y0: 778, x1: 620, y1: 938 };
   const MENSAJE = { x0: 330, y0: 385, x1: 400, y1: 420 };
   // La tira va 14 px más abajo que en el original para dejar sitio al nombre del nivel (Fali).
   const POR_FILA = 17;   // con la letra del nombre del nivel caben 17 por fila, en huecos de 36 px (Fali)
-  const posNumero = (n) => ({ x: 14 + 36 * ((n - 1) % POR_FILA), y: 436 + 28 * Math.floor((n - 1) / POR_FILA) });
+  const posNumero = (n) => ({ x: 14 + 36 * ((n - 1) % POR_FILA), y: 676 + 28 * Math.floor((n - 1) / POR_FILA) });
   const DX = [0, 1, 1, 1, 0, -1, -1, -1], DY = [-1, -1, 0, 1, 1, 1, 0, -1];
 
   // ---------- estilo Jardín ----------
@@ -210,15 +212,15 @@
       }
       for (const [d, c] of tramos) {
         const ex = cx + DX[d] * TAB.c / 2, ey = cy + DY[d] * TAB.c / 2;
-        linea(ctx, [[cx, cy], [ex, ey]], 'rgba(30,40,30,0.55)', 3);
+        linea(ctx, [[cx, cy], [ex, ey]], 'rgba(30,40,30,0.55)', 3 * TAB.c / 24);
       }
       for (const [d, c] of tramos) {
         const ex = cx + DX[d] * TAB.c / 2, ey = cy + DY[d] * TAB.c / 2;
-        ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(ex, ey); ctx.strokeStyle = RGB[c]; ctx.lineWidth = 1.4; ctx.lineCap = 'butt'; ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(ex, ey); ctx.strokeStyle = RGB[c]; ctx.lineWidth = 1.4 * TAB.c / 24; ctx.lineCap = 'butt'; ctx.stroke();
       }
       if (ejes.size >= 2) {
         let c = 0; for (const [, cc] of tramos) c |= cc;
-        ctx.fillStyle = RGB[c]; ctx.fillRect(cx - 1, cy - 1, 2, 2);
+        const pt = TAB.c / 24; ctx.fillStyle = RGB[c]; ctx.fillRect(cx - pt, cy - pt, 2 * pt, 2 * pt);
       }
     }
   }
@@ -249,7 +251,7 @@
   }
 
   // ---------- cuadro de pistas con botón «Pista» (decisión de Fali) ----------
-  const BOTON_PISTA = { x: 460, y: 192, w: 150, h: 34 };  // centrado en el cuadro de pistas, letra como el nombre (Fali)
+  const BOTON_PISTA = { x: 380, y: 818, w: 150, h: 34 };  // centrado en el cuadro de pistas, letra como el nombre (Fali)
   function dibujarCuadroPista(ctx, p) {
     const P = PISTAS, B = BOTON_PISTA;
     if (p.ganado) return textoEnCaja(ctx, TEXTOS.seguir, P.x0, BOTON_PISTA.y, P.x1, 12, C.texto);
@@ -264,14 +266,14 @@
   function dibujarCabecera(ctx, p, completado) {
     const cx = (PISTAS.x0 + PISTAS.x1) / 2;
     // El nombre va debajo del tablero, centrado (Fali).
-    if (p.nivel && p.nivel.nombre) texto(ctx, p.nivel.nombre, TAB.x + TAB.c * N / 2, 406, 22, C.texto, 'center');
+    if (p.nivel && p.nivel.nombre) texto(ctx, p.nivel.nombre, TAB.x + TAB.c * N / 2, 640, 22, C.texto, 'center');
     if (p.ganado) {
       ctx.font = 'bold 20px Verdana, Tahoma, sans-serif';
       const g = ctx.createLinearGradient(cx - 60, 0, cx + 60, 0);
       ['#ff3b3b', '#ff9f1c', '#2ecc71', '#3b82f6', '#8b5cf6'].forEach((c, i) => g.addColorStop(i / 4, c));
       ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.lineWidth = 3; ctx.strokeStyle = '#ffffff'; ctx.lineJoin = 'round';
-      ctx.strokeText(TEXTOS.gana, cx, 152); ctx.fillStyle = g; ctx.fillText(TEXTOS.gana, cx, 152);
-    } else if (completado) texto(ctx, TEXTOS.ganado, cx, 156, 12, C.texto, 'center');
+      ctx.strokeText(TEXTOS.gana, cx, 780); ctx.fillStyle = g; ctx.fillText(TEXTOS.gana, cx, 780);
+    } else if (completado) texto(ctx, TEXTOS.ganado, cx, 790, 12, C.texto, 'center');
   }
   // Devuelve true si la pulsación era el botón (y cambia lo que se ve).
   function pulsarCuadroPista(p, px, py) {
@@ -499,14 +501,14 @@
       // caja de herramientas
       for (let i = 0; i < CAJA.cols * CAJA.filas; i++) {
         const [cx, cy] = centroHueco(i);
-        ctx.fillStyle = C.cajaBorde; ctx.fillRect(cx - 13, cy - 13, 26, 26);
-        ctx.fillStyle = C.caja; ctx.fillRect(cx - 12, cy - 12, 24, 24);
+        ctx.fillStyle = C.cajaBorde; ctx.fillRect(cx - CAJA.c / 2, cy - CAJA.c / 2, CAJA.c, CAJA.c);
+        ctx.fillStyle = C.caja; ctx.fillRect(cx - CAJA.c / 2 + 1, cy - CAJA.c / 2 + 1, CAJA.c - 2, CAJA.c - 2);
       }
-      for (const m of this.moviles) if (m.enCaja && (!a || a.m !== m)) dibujarPieza(ctx, m, ...centroHueco(m.hueco), 24);
+      for (const m of this.moviles) if (m.enCaja && (!a || a.m !== m)) dibujarPieza(ctx, m, ...centroHueco(m.hueco), CAJA.c - 4);
       if (a) {
         // La pieza arrastrada se ve ya encajada en la casilla (o hueco) donde caería; si no cae en ninguno, bajo el dedo.
         const d = this.marcarDestino(ctx, a.px, a.py);
-        if (d) dibujarPieza(ctx, a.m, d.x, d.y, d.lado === TAB.c ? TAB.c : 24); else dibujarPieza(ctx, a.m, a.px, a.py, TAB.c);
+        if (d) dibujarPieza(ctx, a.m, d.x, d.y, d.lado === TAB.c ? TAB.c : CAJA.c - 4); else dibujarPieza(ctx, a.m, a.px, a.py, TAB.c);
       }
       if (this.op.alDibujar) this.op.alDibujar(ctx, this);
       if (this.lupa || this.capaLupa) this.dibujarLupa();
