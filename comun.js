@@ -279,6 +279,27 @@
     p.verPista = !p.verPista; p.dibujar(); return true;
   }
 
+  // ---------- fanfarria al lograr un nivel (la misma de Crímenes de época, hecha con notas) ----------
+  let actx = null;
+  function audio() {
+    if (!actx) { const AC = globalThis.AudioContext || globalThis.webkitAudioContext; if (!AC) return null; actx = new AC(); }
+    if (actx.state === 'suspended') actx.resume();
+    return actx;
+  }
+  function tono(f, t0, dur, tipo, vol) {
+    const a = audio(); if (!a) return;
+    const o = a.createOscillator(), g = a.createGain(), t = a.currentTime + t0;
+    o.type = tipo; o.frequency.setValueAtTime(f, t);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.012); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(a.destination); o.start(t); o.stop(t + dur + 0.03);
+  }
+  function fanfarria() {
+    try {
+      [[392, 0, 0.16], [392, 0.17, 0.08], [523, 0.27, 0.2], [659, 0.5, 0.2], [784, 0.74, 0.5], [659, 1.28, 0.14], [784, 1.44, 0.8]]
+        .forEach(([f, t, d]) => { tono(f, t, d, 'square', 0.05); tono(f / 2, t, d, 'triangle', 0.08); });
+    } catch (e) { /* sin audio */ }
+  }
+
   // ---------- desbloqueo (REGLAS §6.1) ----------
   function nivelesAbiertos(total, hechos) {
     let h = -1;
@@ -493,7 +514,7 @@
 
   globalThis.Cromatron = {
     ANCHO, ALTO, TAB, CAJA, PISTAS, MENSAJE, posNumero, C, RGB, TEXTOS,
-    dibujarCuadroPista, pulsarCuadroPista, pintarFondo, marco, dibujarCabecera,
+    dibujarCuadroPista, pulsarCuadroPista, pintarFondo, marco, dibujarCabecera, fanfarria,
     centro, centroHueco, dibujarPieza, dibujarPared, dibujarRayos, texto, textoEnCaja, numeroTira,
     nivelesAbiertos, codigoSolucion, leerCodigo, cifrar, descifrar, CLAVE, Partida,
   };

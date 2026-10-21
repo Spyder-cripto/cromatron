@@ -45,8 +45,12 @@
   const hechos = () => new Set(estado.hechos);
   const abiertos = () => K.nivelesAbiertos(niveles.length, hechos());
 
+  let ganadoAntes = false;
   const partida = new K.Partida(lienzo, {
     alCambiar: (p) => {
+      // Fanfarria al pasar a «¡Logrado!» por una jugada del jugador (no con el botón «Solución»).
+      if (p.ganado && !ganadoAntes && !p.conSolucion) K.fanfarria();
+      ganadoAntes = p.ganado;
       estado.tableros[estado.actual] = p.colocacion();
       // Un nivel resuelto con el botón «Solución» no cuenta como superado.
       if (p.ganado && !p.conSolucion && !estado.hechos.includes(estado.actual)) estado.hechos.push(estado.actual);
@@ -82,6 +86,7 @@
     estado.actual = Math.max(0, Math.min(niveles.length - 1, i));
     guardar(); partida.conSolucion = false;
     partida.cargar(niveles[estado.actual], estado.actual + 1, estado.tableros[estado.actual]);
+    ganadoAntes = partida.ganado;
   }
 
   // Botones «Reiniciar» y «Solución» (decisión de Fali, para el móvil y el ordenador).
