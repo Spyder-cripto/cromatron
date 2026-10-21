@@ -509,7 +509,7 @@
         if (d) dibujarPieza(ctx, a.m, d.x, d.y, d.lado === TAB.c ? TAB.c : 24); else dibujarPieza(ctx, a.m, a.px, a.py, TAB.c);
       }
       if (this.op.alDibujar) this.op.alDibujar(ctx, this);
-      if (this.lupa) this.dibujarLupa(ctx);
+      if (this.lupa || this.capaLupa) this.dibujarLupa();
     }
     // Al arrastrar: la casilla (o el hueco de la caja) donde caería la pieza, en verde si cabe y en rojo si no.
     marcarDestino(ctx, px, py) {
@@ -531,32 +531,42 @@
       return libre ? { x, y, lado } : null;
     }
     // Lupa: círculo con lo que hay bajo el dedo, aumentado, por encima del dedo (o por debajo, cerca del borde de arriba).
-    dibujarLupa(ctx) {
-      // En pantallas pequeñas la lupa crece, para que se vea bien con el dedo encima (unos 60 px de pantalla de radio).
-      const enPantalla = (this.lienzo.clientWidth || ANCHO) / ANCHO;
-      const R = Math.max(54, Math.min(110, 60 / enPantalla)), Z = 2.2, { px, py } = this.lupa;
-      const l = this.lienzo;
-      const copia = this.copia || (this.copia = document.createElement('canvas'));
-      copia.width = l.width; copia.height = l.height;
-      copia.getContext('2d').drawImage(l, 0, 0);
-      const lx = Math.max(R + 4, Math.min(ANCHO - R - 4, px));
-      let ly = py - R - 30; if (ly - R < 2) ly = py + R + 30;
-      const r = R / Z, k = this.escala;
-      ctx.save();
-      ctx.beginPath(); ctx.arc(lx, ly, R, 0, Math.PI * 2);
-      ctx.shadowColor = 'rgba(40,20,70,0.35)'; ctx.shadowBlur = 10; ctx.shadowOffsetY = 3;
-      ctx.fillStyle = C.cesped; ctx.fill();
-      ctx.restore();
-      ctx.save();
-      ctx.beginPath(); ctx.arc(lx, ly, R, 0, Math.PI * 2); ctx.clip();
-      ctx.drawImage(copia, (px - r) * k, (py - r) * k, 2 * r * k, 2 * r * k, lx - R, ly - R, 2 * R, 2 * R);
-      ctx.strokeStyle = 'rgba(59,42,107,0.55)'; ctx.lineWidth = 1;
-      ctx.beginPath(); ctx.moveTo(lx - 7, ly); ctx.lineTo(lx + 7, ly); ctx.moveTo(lx, ly - 7); ctx.lineTo(lx, ly + 7); ctx.stroke();
-      ctx.restore();
-      const g = ctx.createLinearGradient(lx - R, ly - R, lx + R, ly + R);
-      ['#ff3b3b', '#ff9f1c', '#f5c400', '#2ecc71', '#22b8d6', '#3b82f6', '#8b5cf6', '#ec4899'].forEach((c, i) => g.addColorStop(i / 7, c));
-      ctx.beginPath(); ctx.arc(lx, ly, R, 0, Math.PI * 2); ctx.lineWidth = 5; ctx.strokeStyle = g; ctx.stroke();
-      ctx.beginPath(); ctx.arc(lx, ly, R + 3, 0, Math.PI * 2); ctx.lineWidth = 1.2; ctx.strokeStyle = '#3b2a6b'; ctx.stroke();
+    dibujarLupa() {
+      // La lupa va en una capa por encima de toda la página, para que salga SIEMPRE al norte del dedo (por encima de la
+      // uña), aunque se salga del cuadro del juego (Fali). Medidas en píxeles de pantalla.
+      const l = this.lienzo, rect = l.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+      let capa = this.capaLupa;
+      if (!capa) {
+        capa = this.capaLupa = document.createElement('canvas');
+        Object.assign(capa.style, { position: 'fixed', left: '0', top: '0', width: '100vw', height: '100vh', pointerEvents: 'none', zIndex: '1000' });
+        document.body.appendChild(capa);
+      }
+      const W = window.innerWidth, H = window.innerHeight;
+      if (capa.width !== Math.round(W * dpr) || capa.height !== Math.round(H * dpr)) { capa.width = Math.round(W * dpr); capa.height = Math.round(H * dpr); }
+      const c = capa.getContext('2d');
+      c.setTransform(1, 0, 0, 1, 0, 0); c.clearRect(0, 0, capa.width, capa.height);
+      if (!this.lupa) return;
+      c.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const R = 62, Z = 2.2, sep = 46;                       // radio, aumento y separación del dedo (px de pantalla)
+      const fx = rect.left + this.lupa.px * rect.width / ANCHO, fy = rect.top + this.lupa.py * rect.height / ALTO;
+      const lx = Math.max(R + 4, Math.min(W - R - 4, fx));
+      const ly = Math.max(R + 4, fy - R - sep);              // siempre arriba; solo se pega al borde si no cabe
+      const k = l.width / rect.width, r = R / Z;             // de pantalla a píxeles del lienzo
+      c.save();
+      c.beginPath(); c.arc(lx, ly, R, 0, Math.PI * 2);
+      c.shadowColor = 'rgba(40,20,70,0.35)'; c.shadowBlur = 10; c.shadowOffsetY = 3;
+      c.fillStyle = C.cesped; c.fill();
+      c.restore();
+      c.save();
+      c.beginPath(); c.arc(lx, ly, R, 0, Math.PI * 2); c.clip();
+      c.drawImage(l, (fx - rect.left - r) * k, (fy - rect.top - r) * k, 2 * r * k, 2 * r * k, lx - R, ly - R, 2 * R, 2 * R);
+      c.strokeStyle = 'rgba(59,42,107,0.55)'; c.lineWidth = 1;
+      c.beginPath(); c.moveTo(lx - 7, ly); c.lineTo(lx + 7, ly); c.moveTo(lx, ly - 7); c.lineTo(lx, ly + 7); c.stroke();
+      c.restore();
+      const g = c.createLinearGradient(lx - R, ly - R, lx + R, ly + R);
+      ['#ff3b3b', '#ff9f1c', '#f5c400', '#2ecc71', '#22b8d6', '#3b82f6', '#8b5cf6', '#ec4899'].forEach((col, n) => g.addColorStop(n / 7, col));
+      c.beginPath(); c.arc(lx, ly, R, 0, Math.PI * 2); c.lineWidth = 5; c.strokeStyle = g; c.stroke();
+      c.beginPath(); c.arc(lx, ly, R + 3, 0, Math.PI * 2); c.lineWidth = 1.2; c.strokeStyle = '#3b2a6b'; c.stroke();
     }
   }
 
