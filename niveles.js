@@ -515,6 +515,13 @@ globalThis.CROMATRON_NIVELES = {
      2,
      12,
      3
+    ],
+    [
+     10,
+     0,
+     2,
+     12,
+     13
     ]
    ],
    "caja": [
